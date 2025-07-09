@@ -2,7 +2,9 @@ import React, { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 
 interface User {
+  id: number;
   name: string;
+  email: string;
 }
 
 interface AuthContextType {
@@ -20,7 +22,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = () => setUser({ name: 'Demo User' });
+  const login = () => setUser({ id: 1, name: 'Demo User', email: 'demo@example.com' });
   const logout = () => setUser(null);
 
   return (

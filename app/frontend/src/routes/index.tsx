@@ -1,6 +1,8 @@
 import { createBrowserRouter } from 'react-router-dom';
 import Login from '../components/auth/Login';
 import Signup from '../components/auth/Signup';
+import Layout from '../components/layout/Layout';
+import Dashboard from '../components/dashboard/Dashboard';
 import ProfileView from '../components/profile/ProfileView';
 import ProfileEdit from '../components/profile/ProfileEdit';
 import PostCreate from '../components/posts/PostCreate';
@@ -23,27 +25,41 @@ export const router = createBrowserRouter([
     element: <Signup />,
   },
   {
-    path: '/profile',
-    element: <ProfileView />,
-  },
-  {
-    path: '/profile/edit',
-    element: <ProfileEdit />,
-  },
-  {
-    path: '/posts/create',
-    element: <PostCreate />,
-  },
-  {
-    path: '/posts',
-    element: <PostList />,
-  },
-  {
-    path: '/jobs',
-    element: <JobList />,
-  },
-  {
-    path: '/messages',
-    element: <MessageList />,
+    path: '/app',
+    element: <Layout />,
+    children: [
+      {
+        path: '/app/dashboard',
+        element: <Dashboard />,
+      },
+      {
+        path: '/app/profile',
+        element: <ProfileView />,
+      },
+      {
+        path: '/app/profile/:userId',
+        element: <ProfileView />,
+      },
+      {
+        path: '/app/profile/edit',
+        element: <ProfileEdit />,
+      },
+      {
+        path: '/app/posts/create',
+        element: <PostCreate />,
+      },
+      {
+        path: '/app/posts',
+        element: <PostList />,
+      },
+      {
+        path: '/app/jobs',
+        element: <JobList />,
+      },
+      {
+        path: '/app/messages',
+        element: <MessageList />,
+      },
+    ],
   },
 ]); 
