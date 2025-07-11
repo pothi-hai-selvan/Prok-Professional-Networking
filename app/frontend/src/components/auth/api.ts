@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000';
+const API_URL = '/api';
 
 export const authApi = {
   login: async (credentials: { email: string; password: string }) => {
@@ -7,7 +7,16 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
     });
-    return response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+    if (!response.ok) {
+      throw new Error(data.error || 'Login failed');
+    }
+    return data;
   },
 
   signup: async (userData: { email: string; password: string; name: string }) => {
@@ -16,6 +25,15 @@ export const authApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
     });
-    return response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+    if (!response.ok) {
+      throw new Error(data.error || 'Signup failed');
+    }
+    return data;
   },
 }; 

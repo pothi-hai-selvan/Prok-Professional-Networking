@@ -1,432 +1,342 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { 
-  InputField, 
-  TextAreaField, 
-  SkillsInput, 
-  ImageUpload, 
-  FormSection 
-} from './FormComponents';
-import { profileApi } from './api';
-import { mockProfile, mockUser, validationRules } from './mockData';
-import type { Profile, User, ProfileFormData, ValidationError } from '../../types';
+import React, { useEffect, useState } from "react";
+import { profileApi } from "./api";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { mockProfile } from "./mockData";
+import type { Profile, Experience, Education } from "../../types";
 
-const ProfileEdit: React.FC = () => {
+const emptyExperience: Experience = { id: Date.now(), title: "", company: "", start_date: "", end_date: "", description: "" };
+const emptyEducation: Education = { id: Date.now(), school: "", degree: "", field: "", start_date: "", end_date: "" };
+
+export default function ProfileEdit({ onSaved }: { onSaved?: () => void }) {
+  const { user, setUser } = useAuth();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-
-  // Form state
-  const [formData, setFormData] = useState<ProfileFormData>({
-    name: '',
-    email: '',
-    bio: '',
-    title: '',
-    location: '',
-    skills: [],
-    experience: [],
-    education: [],
-    social_links: {
-      linkedin: '',
-      twitter: '',
-      github: '',
-      website: ''
-    },
-    contact_info: {
-      email: '',
-      phone: '',
-      location: ''
-    }
-  });
-
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        setLoading(true);
-        // For now, using mock data. Replace with actual API call
-        // const profileData = await profileApi.getProfile();
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Populate form with mock data
-        setFormData({
-          name: mockUser.name,
-          email: mockUser.email,
-          bio: mockProfile.bio || '',
-          title: mockProfile.title || '',
-          location: mockProfile.location || '',
-          skills: mockProfile.skills || [],
-          experience: mockProfile.experience || [],
-          education: mockProfile.education || [],
-          social_links: mockProfile.social_links || {
-            linkedin: '',
-            twitter: '',
-            github: '',
-            website: ''
-          },
-          contact_info: mockProfile.contact_info || {
-            email: mockUser.email,
-            phone: '',
-            location: ''
-          }
-        });
-
-        if (mockProfile.avatar_url) {
-          setImagePreview(mockProfile.avatar_url);
-        }
-      } catch (err) {
-        setError('Failed to load profile data');
-        console.error('Error fetching profile:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfileData();
+    setLoading(true);
+    profileApi.getProfile()
+      .then((data) => setProfile(data || mockProfile))
+      .catch(() => setProfile(mockProfile))
+      .finally(() => setLoading(false));
   }, []);
 
-  const validateField = (field: string, value: any): string | null => {
-    const rules = validationRules[field as keyof typeof validationRules];
-    if (!rules) return null;
-
-    if (rules.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
-      return `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
-    }
-
-    if (typeof value === 'string') {
-      if (rules.minLength && value.length < rules.minLength) {
-        return `${field.charAt(0).toUpperCase() + field.slice(1)} must be at least ${rules.minLength} characters`;
-      }
-      if (rules.maxLength && value.length > rules.maxLength) {
-        return `${field.charAt(0).toUpperCase() + field.slice(1)} must be no more than ${rules.maxLength} characters`;
-      }
-      if (rules.pattern && !rules.pattern.test(value)) {
-        return `Please enter a valid ${field}`;
-      }
-    }
-
-    if (Array.isArray(value) && rules.maxItems && value.length > rules.maxItems) {
-      return `You can only add up to ${rules.maxItems} ${field}`;
-    }
-
-    return null;
+  // Handlers for all fields
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (!profile) return;
+    setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
-  const validateForm = (): boolean => {
-    const errors: ValidationError[] = [];
-    
-    // Validate each field
-    Object.keys(formData).forEach(field => {
-      const value = formData[field as keyof ProfileFormData];
-      const error = validateField(field, value);
-      if (error) {
-        errors.push({ field, message: error });
-      }
-    });
-
-    // Validate nested objects
-    Object.keys(formData.social_links).forEach(field => {
-      const value = formData.social_links[field as keyof typeof formData.social_links];
-      if (value && !value.startsWith('http')) {
-        errors.push({ 
-          field: `social_links.${field}`, 
-          message: 'Please enter a valid URL starting with http:// or https://' 
-        });
-      }
-    });
-
-    setValidationErrors(errors);
-    return errors.length === 0;
+  // Experience
+  const handleExpChange = (idx: number, field: string, value: string) => {
+    if (!profile) return;
+    const updated = [...profile.experience];
+    updated[idx] = { ...updated[idx], [field]: value };
+    setProfile({ ...profile, experience: updated });
+  };
+  const addExperience = () => {
+    if (!profile) return;
+    setProfile({ ...profile, experience: [...profile.experience, { ...emptyExperience, id: Date.now() }] });
+  };
+  const removeExperience = (idx: number) => {
+    if (!profile) return;
+    setProfile({ ...profile, experience: profile.experience.filter((_, i) => i !== idx) });
   };
 
-  const getFieldError = (field: string): string | undefined => {
-    return validationErrors.find(error => error.field === field)?.message;
+  // Education
+  const handleEduChange = (idx: number, field: string, value: string) => {
+    if (!profile) return;
+    const updated = [...profile.education];
+    updated[idx] = { ...updated[idx], [field]: value };
+    setProfile({ ...profile, education: updated });
+  };
+  const addEducation = () => {
+    if (!profile) return;
+    setProfile({ ...profile, education: [...profile.education, { ...emptyEducation, id: Date.now() }] });
+  };
+  const removeEducation = (idx: number) => {
+    if (!profile) return;
+    setProfile({ ...profile, education: profile.education.filter((_, i) => i !== idx) });
   };
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-
-    // Clear validation error for this field
-    setValidationErrors(prev => prev.filter(error => error.field !== field));
+  // Skills
+  const [skillInput, setSkillInput] = useState("");
+  const addSkill = () => {
+    if (!profile || !skillInput.trim()) return;
+    setProfile({ ...profile, skills: [...profile.skills, skillInput.trim()] });
+    setSkillInput("");
+  };
+  const removeSkill = (idx: number) => {
+    if (!profile) return;
+    setProfile({ ...profile, skills: profile.skills.filter((_, i) => i !== idx) });
   };
 
-  const handleNestedChange = (parent: string, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [parent]: {
-        ...prev[parent as keyof ProfileFormData],
-        [field]: value
-      }
-    }));
+  // TODO: Add featured, recommendations support after backend update
 
-    // Clear validation error for this field
-    setValidationErrors(prev => prev.filter(error => error.field !== `${parent}.${field}`));
-  };
-
-  const handleImageChange = (file: File | null) => {
-    setSelectedImage(file);
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Save (only send supported fields for now)
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
-    if (!validateForm()) {
+    if (!profile) return;
+    if (!profile.full_name || profile.full_name.trim() === "") {
+      setError("Full Name is required.");
       return;
     }
-
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
     try {
-      setSaving(true);
-      
-      // For now, simulate API call
-      // const response = await profileApi.updateProfile(formData);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      setSuccess('Profile updated successfully!');
-      setTimeout(() => {
-        navigate('/app/profile');
-      }, 1500);
-    } catch (err) {
-      setError('Failed to update profile. Please try again.');
-      console.error('Error updating profile:', err);
+      await profileApi.updateProfile({
+        full_name: profile.full_name,
+        bio: profile.bio,
+        location: profile.location,
+        is_private: profile.is_private,
+      });
+      // Update AuthContext with new name
+      setUser((prev) => prev ? { ...prev, name: profile.full_name } : prev);
+      setSuccess("Profile updated!");
+      if (onSaved) onSaved();
+      setTimeout(() => navigate("/app/profile"), 1200);
+    } catch (e: any) {
+      setError(e.message || 'Failed to update profile');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleCancel = () => {
-    navigate('/app/profile');
+  // Handle image file selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto p-4">
-        <div className="animate-pulse">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-8 mb-6"></div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-96"></div>
-        </div>
-      </div>
-    );
-  }
+  // Handle image upload
+  const handleImageUpload = async () => {
+    if (!imageFile) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const res = await profileApi.uploadImage(imageFile);
+      if (res.image_url) {
+        setProfile((prev) => prev ? { ...prev, image_url: res.image_url } : prev);
+        setSuccess('Profile image updated!');
+        setImageFile(null);
+        setImagePreview(null);
+      } else {
+        setError(res.error || 'Image upload failed');
+      }
+    } catch (e: any) {
+      setError(e.message || 'Image upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (loading || !profile) return <div className="flex justify-center items-center h-96">Loading...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 pt-8">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
-            <div className="flex space-x-3">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={saving}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors flex items-center"
-              >
-                {saving ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Saving...
-                  </>
-                ) : (
-                  'Save Changes'
-                )}
-              </button>
-            </div>
-          </div>
+    <form onSubmit={handleSave} className="max-w-5xl mx-auto bg-white p-10 rounded-3xl shadow-xl space-y-10 mt-10">
+      <h2 className="text-4xl font-bold mb-6 text-center">Edit Profile</h2>
+      {error && <div className="text-red-600 text-center text-lg">{error}</div>}
+      {success && <div className="text-green-600 text-center font-semibold text-lg">{success}</div>}
+      {/* Profile Image Upload */}
+      <div className="flex flex-col items-center mb-6">
+        <div className="mb-2">
+          <img
+            src={imagePreview || profile.image_url || '/default-avatar.png'}
+            alt="Profile Preview"
+            className="w-32 h-32 rounded-full object-cover border-4 border-blue-200 shadow"
+          />
         </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Error/Success Messages */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <div className="flex">
-                <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <p className="text-red-800">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {success && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-4">
-              <div className="flex">
-                <svg className="w-5 h-5 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-green-800">{success}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Basic Information */}
-          <FormSection title="Basic Information">
-            <ImageUpload
-              currentImage={imagePreview}
-              onImageChange={handleImageChange}
-              error={getFieldError('avatar')}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InputField
-                label="Full Name"
-                value={formData.name}
-                onChange={(value) => handleInputChange('name', value)}
-                required
-                error={getFieldError('name')}
-                maxLength={50}
-              />
-              <InputField
-                label="Email"
-                type="email"
-                value={formData.email}
-                onChange={(value) => handleInputChange('email', value)}
-                required
-                error={getFieldError('email')}
-              />
-            </div>
-
-            <InputField
-              label="Professional Title"
-              value={formData.title}
-              onChange={(value) => handleInputChange('title', value)}
-              placeholder="e.g., Senior Software Engineer"
-              error={getFieldError('title')}
-              maxLength={100}
-            />
-
-            <InputField
-              label="Location"
-              value={formData.location}
-              onChange={(value) => handleInputChange('location', value)}
-              placeholder="e.g., San Francisco, CA"
-              error={getFieldError('location')}
-              maxLength={100}
-            />
-
-            <TextAreaField
-              label="Bio"
-              value={formData.bio}
-              onChange={(value) => handleInputChange('bio', value)}
-              placeholder="Tell us about yourself..."
-              error={getFieldError('bio')}
-              maxLength={500}
-              rows={4}
-            />
-
-            <SkillsInput
-              skills={formData.skills}
-              onChange={(skills) => handleInputChange('skills', skills)}
-              error={getFieldError('skills')}
-              maxSkills={10}
-            />
-          </FormSection>
-
-          {/* Contact Information */}
-          <FormSection title="Contact Information" collapsible defaultOpen={false}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InputField
-                label="Email"
-                type="email"
-                value={formData.contact_info.email}
-                onChange={(value) => handleNestedChange('contact_info', 'email', value)}
-                required
-                error={getFieldError('contact_info.email')}
-              />
-              <InputField
-                label="Phone"
-                type="tel"
-                value={formData.contact_info.phone}
-                onChange={(value) => handleNestedChange('contact_info', 'phone', value)}
-                placeholder="+1 (555) 123-4567"
-                error={getFieldError('contact_info.phone')}
-              />
-            </div>
-            <InputField
-              label="Location"
-              value={formData.contact_info.location}
-              onChange={(value) => handleNestedChange('contact_info', 'location', value)}
-              placeholder="e.g., San Francisco, CA"
-              error={getFieldError('contact_info.location')}
-            />
-          </FormSection>
-
-          {/* Social Links */}
-          <FormSection title="Social Links" collapsible defaultOpen={false}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InputField
-                label="LinkedIn"
-                type="url"
-                value={formData.social_links.linkedin}
-                onChange={(value) => handleNestedChange('social_links', 'linkedin', value)}
-                placeholder="https://linkedin.com/in/yourprofile"
-                error={getFieldError('social_links.linkedin')}
-              />
-              <InputField
-                label="Twitter"
-                type="url"
-                value={formData.social_links.twitter}
-                onChange={(value) => handleNestedChange('social_links', 'twitter', value)}
-                placeholder="https://twitter.com/yourhandle"
-                error={getFieldError('social_links.twitter')}
-              />
-              <InputField
-                label="GitHub"
-                type="url"
-                value={formData.social_links.github}
-                onChange={(value) => handleNestedChange('social_links', 'github', value)}
-                placeholder="https://github.com/yourusername"
-                error={getFieldError('social_links.github')}
-              />
-              <InputField
-                label="Website"
-                type="url"
-                value={formData.social_links.website}
-                onChange={(value) => handleNestedChange('social_links', 'website', value)}
-                placeholder="https://yourwebsite.com"
-                error={getFieldError('social_links.website')}
-              />
-            </div>
-          </FormSection>
-
-          {/* Experience and Education sections would go here */}
-          {/* For brevity, I'm focusing on the core functionality */}
-        </form>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
+          className="mb-2"
+        />
+        <button
+          type="button"
+          onClick={handleImageUpload}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-blue-600 transition"
+          disabled={!imageFile || uploading}
+        >
+          {uploading ? 'Uploading...' : 'Upload Image'}
+        </button>
       </div>
-    </div>
+      {/* Full Name */}
+      <div>
+        <label className="block font-semibold mb-2 text-lg">Full Name</label>
+        <input
+          name="full_name"
+          value={profile.full_name || ""}
+          onChange={handleChange}
+          className="w-full border rounded-2xl px-4 py-3 text-base"
+          placeholder="Your full name"
+          required
+        />
+      </div>
+      {/* About */}
+      <div>
+        <label className="block font-semibold mb-2 text-lg">About</label>
+        <textarea
+          name="bio"
+          value={profile.bio || ""}
+          onChange={handleChange}
+          className="w-full border rounded-2xl px-4 py-3 text-base"
+          rows={4}
+          placeholder="Tell us about yourself, your experience, and your goals..."
+        />
+      </div>
+      {/* Experience */}
+      <div>
+        <label className="block font-semibold mb-2 text-lg">Experience</label>
+        {(profile.experience || []).map((exp, idx) => (
+          <div key={exp.id} className="border rounded-2xl p-4 mb-2 flex flex-col gap-2 bg-gray-50">
+            <input
+              type="text"
+              placeholder="Title"
+              value={exp.title}
+              onChange={e => handleExpChange(idx, "title", e.target.value)}
+              className="border rounded-2xl px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Company"
+              value={exp.company}
+              onChange={e => handleExpChange(idx, "company", e.target.value)}
+              className="border rounded-2xl px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Start Date"
+              value={exp.start_date}
+              onChange={e => handleExpChange(idx, "start_date", e.target.value)}
+              className="border rounded-2xl px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="End Date"
+              value={exp.end_date}
+              onChange={e => handleExpChange(idx, "end_date", e.target.value)}
+              className="border rounded-2xl px-3 py-2"
+            />
+            <textarea
+              placeholder="Description"
+              value={exp.description}
+              onChange={e => handleExpChange(idx, "description", e.target.value)}
+              className="border rounded-2xl px-3 py-2"
+              rows={2}
+            />
+            <button type="button" onClick={() => removeExperience(idx)} className="text-red-500 text-xs self-end rounded-full px-3 py-1 hover:bg-red-100">Remove</button>
+          </div>
+        ))}
+        <button type="button" onClick={addExperience} className="bg-blue-500 text-white px-5 py-2 rounded-full font-semibold shadow hover:bg-blue-600 transition mt-2">Add Experience</button>
+      </div>
+      {/* Education */}
+      <div>
+        <label className="block font-semibold mb-2 text-lg">Education</label>
+        {(profile.education || []).map((edu, idx) => (
+          <div key={edu.id} className="border rounded-2xl p-4 mb-2 flex flex-col gap-2 bg-gray-50">
+            <input
+              type="text"
+              placeholder="School"
+              value={edu.school}
+              onChange={e => handleEduChange(idx, "school", e.target.value)}
+              className="border rounded-2xl px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Degree"
+              value={edu.degree}
+              onChange={e => handleEduChange(idx, "degree", e.target.value)}
+              className="border rounded-2xl px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Field"
+              value={edu.field}
+              onChange={e => handleEduChange(idx, "field", e.target.value)}
+              className="border rounded-2xl px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="Start Date"
+              value={edu.start_date}
+              onChange={e => handleEduChange(idx, "start_date", e.target.value)}
+              className="border rounded-2xl px-3 py-2"
+            />
+            <input
+              type="text"
+              placeholder="End Date"
+              value={edu.end_date}
+              onChange={e => handleEduChange(idx, "end_date", e.target.value)}
+              className="border rounded-2xl px-3 py-2"
+            />
+            <button type="button" onClick={() => removeEducation(idx)} className="text-red-500 text-xs self-end rounded-full px-3 py-1 hover:bg-red-100">Remove</button>
+          </div>
+        ))}
+        <button type="button" onClick={addEducation} className="bg-blue-500 text-white px-5 py-2 rounded-full font-semibold shadow hover:bg-blue-600 transition mt-2">Add Education</button>
+      </div>
+      {/* Skills */}
+      <div>
+        <label className="block font-semibold mb-2 text-lg">Skills</label>
+        <div className="flex gap-2 mb-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="Add a skill"
+            value={skillInput}
+            onChange={e => setSkillInput(e.target.value)}
+            className="border rounded-2xl px-3 py-2 flex-1"
+          />
+          <button type="button" onClick={addSkill} className="bg-blue-500 text-white px-5 py-2 rounded-full font-semibold shadow hover:bg-blue-600 transition">Add</button>
+        </div>
+        <ul className="flex flex-wrap gap-2">
+          {(profile.skills || []).map((skill, idx) => (
+            <li key={idx} className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full flex items-center gap-1">
+              {skill}
+              <button type="button" onClick={() => removeSkill(idx)} className="text-red-500 text-xs ml-1 rounded-full px-2 py-1 hover:bg-red-100">x</button>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {/* Recommendations */}
+      {/* <div>
+        <label className="block font-semibold mb-2 text-lg">Recommendations</label>
+        <div className="flex gap-2 mb-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="Add a recommendation (text only)"
+            value={recInput}
+            onChange={e => setRecInput(e.target.value)}
+            className="border rounded-2xl px-3 py-2 flex-1"
+          />
+          <button type="button" onClick={addRecommendation} className="bg-blue-500 text-white px-5 py-2 rounded-full font-semibold shadow hover:bg-blue-600 transition">Add</button>
+        </div>
+        <ul>
+          {(profile.recommendations || []).map((rec, idx) => (
+            <li key={idx} className="flex items-center gap-2 mb-1">
+              <span className="text-gray-700">{rec}</span>
+              <button type="button" onClick={() => removeRecommendation(idx)} className="text-red-500 text-xs ml-2 rounded-full px-2 py-1 hover:bg-red-100">Remove</button>
+            </li>
+          ))}
+        </ul>
+      </div> */}
+      <button
+        type="submit"
+        className="w-full bg-blue-600 text-white px-8 py-4 rounded-full font-bold text-xl shadow-lg hover:bg-blue-700 transition"
+        disabled={saving}
+      >
+        {saving ? "Saving..." : "Save All Changes"}
+      </button>
+    </form>
   );
-};
-
-export default ProfileEdit; 
+} 

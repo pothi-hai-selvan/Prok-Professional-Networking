@@ -8,8 +8,10 @@ export interface User {
 export interface Profile {
   id: number;
   user_id: number;
+  full_name: string; // Added for backend compatibility
   bio: string;
   location: string;
+  is_private?: boolean; // Added for backend compatibility
   skills: string[];
   experience: Experience[];
   education: Education[];

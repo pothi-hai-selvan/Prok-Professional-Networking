@@ -10,6 +10,7 @@ import PostList from '../components/posts/PostList';
 import Feed from '../components/feed/Feed';
 import JobList from '../components/job-board/JobList';
 import MessageList from '../components/messaging/MessageList';
+import EditProfile from '../components/profile/EditProfile';
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +24,10 @@ export const router = createBrowserRouter([
   {
     path: '/signup',
     element: <Signup />,
+  },
+  {
+    path: '/edit-profile',
+    element: <EditProfile />,
   },
   {
     path: '/app',

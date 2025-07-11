@@ -8,7 +8,16 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
     });
-    return response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+    if (!response.ok) {
+      throw new Error(data.error || 'Login failed');
+    }
+    return data;
   },
 
   signup: async (userData: { email: string; password: string; name: string }) => {
@@ -17,7 +26,16 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
     });
-    return response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+    if (!response.ok) {
+      throw new Error(data.error || 'Signup failed');
+    }
+    return data;
   },
 
   // Profile endpoints
@@ -41,4 +59,59 @@ export const api = {
     });
     return response.json();
   },
-}; 
+};
+
+export async function getProfile(token: string) {
+  const res = await fetch('/api/profile', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Failed to fetch profile');
+  return res.json();
+}
+
+export async function updateProfile(token: string, data: any) {
+  const res = await fetch('/api/profile', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update profile');
+  return res.json();
+}
+
+export async function createProfile(token: string, data: any) {
+  const res = await fetch('/api/profile', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to create profile');
+  return res.json();
+}
+
+export async function uploadProfileImage(token: string, file: File) {
+  const formData = new FormData();
+  formData.append('image', file);
+  const res = await fetch('/api/profile/image', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) throw new Error('Failed to upload image');
+  return res.json();
+}
+
+export async function deleteProfileImage(token: string) {
+  const res = await fetch('/api/profile/image', {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Failed to delete image');
+  return res.json();
+} 

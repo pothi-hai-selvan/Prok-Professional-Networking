@@ -1,8 +1,8 @@
-const API_URL = 'http://localhost:5000';
+const API_URL = '/api';
 
 export const profileApi = {
   getProfile: async () => {
-    const response = await fetch(`${API_URL}/api/profile`, {
+    const response = await fetch(`${API_URL}/profile`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
@@ -12,7 +12,7 @@ export const profileApi = {
   },
 
   updateProfile: async (profileData: any) => {
-    const response = await fetch(`${API_URL}/api/profile`, {
+    const response = await fetch(`${API_URL}/profile`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ export const profileApi = {
   },
 
   getActivities: async (page = 1, limit = 10) => {
-    const response = await fetch(`${API_URL}/api/profile/activities?page=${page}&limit=${limit}`, {
+    const response = await fetch(`${API_URL}/profile/activities?page=${page}&limit=${limit}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
@@ -35,7 +35,7 @@ export const profileApi = {
   },
 
   getPosts: async (page = 1, limit = 10) => {
-    const response = await fetch(`${API_URL}/api/profile/posts?page=${page}&limit=${limit}`, {
+    const response = await fetch(`${API_URL}/profile/posts?page=${page}&limit=${limit}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
@@ -48,10 +48,11 @@ export const profileApi = {
     const formData = new FormData();
     formData.append('image', file);
 
-    const response = await fetch(`${API_URL}/api/profile/upload-image`, {
+    const response = await fetch(`${API_URL}/profile/image`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        // Do NOT set 'Content-Type' here!
       },
       credentials: 'include',
       body: formData,
@@ -60,7 +61,7 @@ export const profileApi = {
   },
 
   getProfileById: async (userId: string) => {
-    const response = await fetch(`${API_URL}/api/profile/${userId}`, {
+    const response = await fetch(`${API_URL}/profile/${userId}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
@@ -70,7 +71,7 @@ export const profileApi = {
   },
 
   connectWithUser: async (userId: string) => {
-    const response = await fetch(`${API_URL}/api/profile/${userId}/connect`, {
+    const response = await fetch(`${API_URL}/profile/${userId}/connect`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -81,7 +82,7 @@ export const profileApi = {
   },
 
   sendMessage: async (userId: string, message: string) => {
-    const response = await fetch(`${API_URL}/api/messages`, {
+    const response = await fetch(`${API_URL}/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
