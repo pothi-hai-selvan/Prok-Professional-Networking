@@ -1,13 +1,12 @@
 import { RouterProvider } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
 import { router } from './routes';
 import './index.css';
 
 function App() {
   return (
-    <AuthProvider>
+    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
       <RouterProvider router={router} />
-    </AuthProvider>
+    </div>
   );
 }
 

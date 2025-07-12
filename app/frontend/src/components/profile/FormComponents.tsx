@@ -26,7 +26,7 @@ export const InputField: React.FC<InputFieldProps> = ({
 }) => {
   return (
     <div className="mb-4">
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm font-medium text-black dark:text-white mb-1">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
@@ -40,10 +40,11 @@ export const InputField: React.FC<InputFieldProps> = ({
         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
           error ? 'border-red-500' : 'border-gray-300'
         } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+        style={{ color: 'black' }}
       />
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
       {maxLength && (
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-black dark:text-white">
           {value.length}/{maxLength} characters
         </p>
       )}
@@ -76,7 +77,7 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
 }) => {
   return (
     <div className="mb-4">
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm font-medium text-black dark:text-white mb-1">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
@@ -90,10 +91,11 @@ export const TextAreaField: React.FC<TextAreaFieldProps> = ({
         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-vertical ${
           error ? 'border-red-500' : 'border-gray-300'
         } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+        style={{ color: 'black' }}
       />
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
       {maxLength && (
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-black dark:text-white">
           {value.length}/{maxLength} characters
         </p>
       )}
@@ -139,9 +141,9 @@ export const SkillsInput: React.FC<SkillsInputProps> = ({
 
   return (
     <div className="mb-4">
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm font-medium text-black dark:text-white mb-1">
         Skills
-        <span className="text-gray-500 text-xs ml-1">({skills.length}/{maxSkills})</span>
+        <span className="text-black dark:text-white text-xs ml-1">({skills.length}/{maxSkills})</span>
       </label>
       <div className="flex flex-wrap gap-2 mb-2">
         {skills.map((skill, index) => (
@@ -171,6 +173,7 @@ export const SkillsInput: React.FC<SkillsInputProps> = ({
             onKeyPress={handleKeyPress}
             placeholder="Add a skill..."
             className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ color: 'black' }}
           />
           <button
             type="button"
@@ -242,7 +245,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   return (
     <div className="mb-4">
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm font-medium text-black dark:text-white mb-1">
         Profile Picture
       </label>
       <div
@@ -262,7 +265,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               alt="Profile preview"
               className="w-24 h-24 rounded-full mx-auto object-cover"
             />
-            <p className="text-sm text-gray-600">Click to change image</p>
+            <p className="text-sm text-black dark:text-white">Click to change image</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -271,10 +274,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-black dark:text-white">
               Drag and drop an image here, or click to select
             </p>
-            <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+            <p className="text-xs text-black dark:text-white">PNG, JPG up to 5MB</p>
           </div>
         )}
         <input
@@ -313,7 +316,7 @@ export const FormSection: React.FC<FormSectionProps> = ({
   if (!collapsible) {
     return (
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+        <h3 className="text-lg font-semibold text-black dark:text-white mb-4">{title}</h3>
         {children}
       </div>
     );
@@ -326,9 +329,9 @@ export const FormSection: React.FC<FormSectionProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-4 py-3 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 rounded-t-lg"
       >
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <h3 className="text-lg font-semibold text-black dark:text-white">{title}</h3>
         <svg
-          className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 text-black dark:text-white transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

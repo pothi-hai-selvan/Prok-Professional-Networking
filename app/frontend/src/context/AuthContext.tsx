@@ -9,7 +9,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: () => void;
+  login: (userData?: Partial<User>) => void;
   logout: () => void;
 }
 
@@ -22,7 +22,20 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = () => setUser({ id: 1, name: 'Demo User', email: 'demo@example.com' });
+  const login = (userData?: Partial<User>) => {
+    if (userData) {
+      // Use provided user data
+      setUser({
+        id: userData.id || 1,
+        name: userData.name || 'Demo User',
+        email: userData.email || 'demo@example.com'
+      });
+    } else {
+      // Fallback to demo user
+      setUser({ id: 1, name: 'Demo User', email: 'demo@example.com' });
+    }
+  };
+  
   const logout = () => setUser(null);
 
   return (

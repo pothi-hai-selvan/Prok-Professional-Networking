@@ -1,38 +1,49 @@
 import React from 'react';
+import type { ProfileData } from '../../hooks/useProfileData';
 
-const mockExperience = [
-  {
-    company: 'TechCorp',
-    title: 'Senior Software Engineer',
-    start: 'Jan 2020',
-    end: 'Present',
-    description: 'Leading a team of 8 engineers to build scalable SaaS products.'
-  },
-  {
-    company: 'Webify',
-    title: 'Frontend Developer',
-    start: 'Jun 2017',
-    end: 'Dec 2019',
-    description: 'Developed modern web interfaces using React and Redux.'
+interface ExperienceTimelineProps {
+  profileData: ProfileData;
+}
+
+export default function ExperienceTimeline({ profileData }: ExperienceTimelineProps) {
+  const experiences = profileData.experience;
+
+  if (experiences.length === 0) {
+    return (
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6 border border-gray-200 dark:border-gray-700">
+        <h2 className="text-xl font-bold mb-4 text-black dark:text-white">Experience</h2>
+        <p className="text-black dark:text-white italic">No experience added yet. Edit your profile to add your work experience!</p>
+      </section>
+    );
   }
-];
 
-export default function ExperienceTimeline() {
   return (
-    <section className="bg-white rounded-lg shadow p-6 mb-6">
-      <h2 className="text-xl font-bold mb-4">Experience</h2>
-      <ol className="relative border-l-2 border-blue-200">
-        {mockExperience.map((exp, idx) => (
-          <li key={idx} className="mb-8 ml-6">
-            <span className="absolute -left-3 flex items-center justify-center w-6 h-6 bg-blue-100 rounded-full ring-8 ring-white">
-              <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" /></svg>
-            </span>
-            <h3 className="text-lg font-semibold">{exp.title} <span className="text-gray-500 font-normal">@ {exp.company}</span></h3>
-            <span className="block text-sm text-gray-400 mb-1">{exp.start} - {exp.end}</span>
-            <p className="text-gray-700">{exp.description}</p>
-          </li>
+    <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6 border border-gray-200 dark:border-gray-700">
+      <h2 className="text-xl font-bold mb-4 text-black dark:text-white">Experience</h2>
+      <div className="space-y-6">
+        {experiences.map((exp, index) => (
+          <div key={index} className="flex">
+            <div className="flex-shrink-0">
+              <div className="w-3 h-3 bg-blue-600 rounded-full mt-2"></div>
+              {index < experiences.length - 1 && (
+                <div className="w-0.5 h-full bg-gray-200 dark:bg-gray-600 mx-auto mt-2"></div>
+              )}
+            </div>
+            <div className="ml-4 flex-1">
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <h3 className="font-semibold text-black dark:text-white">{exp.position}</h3>
+                <p className="text-blue-600 dark:text-blue-400 font-medium">{exp.company}</p>
+                <p className="text-black dark:text-white text-sm">
+                  {exp.start_date} - {exp.end_date || 'Present'}
+                </p>
+                {exp.description && (
+                  <p className="text-black dark:text-white mt-2 whitespace-pre-line">{exp.description}</p>
+                )}
+              </div>
+            </div>
+          </div>
         ))}
-      </ol>
+      </div>
     </section>
   );
 } 

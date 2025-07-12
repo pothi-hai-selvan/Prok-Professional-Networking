@@ -14,9 +14,12 @@
     "@types/react-dom": "^18.0.0",
     "@types/react-router-dom": "^5.3.3",
     "axios": "^1.10.0",
+    "install": "^0.13.0",
+    "npm": "^11.4.2",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-dropzone": "^14.3.8",
+    "react-quill": "^2.0.0",
     "react-router-dom": "^6.0.0"
   },
   "devDependencies": {

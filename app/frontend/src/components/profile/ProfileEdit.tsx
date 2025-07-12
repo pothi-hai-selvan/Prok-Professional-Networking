@@ -51,37 +51,73 @@ const ProfileEdit: React.FC = () => {
     const fetchProfileData = async () => {
       try {
         setLoading(true);
-        // For now, using mock data. Replace with actual API call
-        // const profileData = await profileApi.getProfile();
         
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Try to load from backend API first
+        try {
+          const profileData = await profileApi.getProfile();
+          setFormData({
+            name: profileData.user?.name || mockUser.name,
+            email: profileData.user?.email || mockUser.email,
+            bio: profileData.bio || '',
+            title: profileData.title || '',
+            location: profileData.location || '',
+            skills: profileData.skills || [],
+            experience: profileData.experience || [],
+            education: profileData.education || [],
+            social_links: profileData.social_links || {
+              linkedin: '',
+              twitter: '',
+              github: '',
+              website: ''
+            },
+            contact_info: profileData.contact_info || {
+              email: profileData.user?.email || mockUser.email,
+              phone: '',
+              location: ''
+            }
+          });
 
-        // Populate form with mock data
-        setFormData({
-          name: mockUser.name,
-          email: mockUser.email,
-          bio: mockProfile.bio || '',
-          title: mockProfile.title || '',
-          location: mockProfile.location || '',
-          skills: mockProfile.skills || [],
-          experience: mockProfile.experience || [],
-          education: mockProfile.education || [],
-          social_links: mockProfile.social_links || {
-            linkedin: '',
-            twitter: '',
-            github: '',
-            website: ''
-          },
-          contact_info: mockProfile.contact_info || {
-            email: mockUser.email,
-            phone: '',
-            location: ''
+          if (profileData.avatar_url) {
+            setImagePreview(profileData.avatar_url);
           }
-        });
+        } catch (apiError) {
+          console.log('API not available, using localStorage fallback');
+          // Fall back to localStorage if API fails
+          const savedProfile = localStorage.getItem('userProfile');
+          if (savedProfile) {
+            const parsedProfile = JSON.parse(savedProfile);
+            setFormData(parsedProfile);
+            if (parsedProfile.avatar_url) {
+              setImagePreview(parsedProfile.avatar_url);
+            }
+          } else {
+            // Use mock data as final fallback
+            setFormData({
+              name: mockUser.name,
+              email: mockUser.email,
+              bio: mockProfile.bio || '',
+              title: mockProfile.title || '',
+              location: mockProfile.location || '',
+              skills: mockProfile.skills || [],
+              experience: mockProfile.experience || [],
+              education: mockProfile.education || [],
+              social_links: mockProfile.social_links || {
+                linkedin: '',
+                twitter: '',
+                github: '',
+                website: ''
+              },
+              contact_info: mockProfile.contact_info || {
+                email: mockUser.email,
+                phone: '',
+                location: ''
+              }
+            });
 
-        if (mockProfile.avatar_url) {
-          setImagePreview(mockProfile.avatar_url);
+            if (mockProfile.avatar_url) {
+              setImagePreview(mockProfile.avatar_url);
+            }
+          }
         }
       } catch (err) {
         setError('Failed to load profile data');
@@ -200,16 +236,49 @@ const ProfileEdit: React.FC = () => {
     try {
       setSaving(true);
       
-      // For now, simulate API call
-      // const response = await profileApi.updateProfile(formData);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      setSuccess('Profile updated successfully!');
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      
+      // Add all form fields
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('bio', formData.bio);
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('location', formData.location);
+      formDataToSend.append('skills', JSON.stringify(formData.skills));
+      formDataToSend.append('experience', JSON.stringify(formData.experience));
+      formDataToSend.append('education', JSON.stringify(formData.education));
+      formDataToSend.append('social_links', JSON.stringify(formData.social_links));
+      formDataToSend.append('contact_info', JSON.stringify(formData.contact_info));
+      
+      // Add image if selected
+      if (selectedImage) {
+        formDataToSend.append('avatar', selectedImage);
+      }
+      
+      // Try to save to backend API first
+      try {
+        await profileApi.updateProfile(formDataToSend);
+        setSuccess('Profile updated successfully!');
+      } catch (apiError) {
+        console.log('API not available, saving to localStorage');
+        // Fall back to localStorage if API fails
+        const profileDataToSave = {
+          ...formData,
+          avatar_url: imagePreview,
+          updated_at: new Date().toISOString()
+        };
+        
+        localStorage.setItem('userProfile', JSON.stringify(profileDataToSave));
+        localStorage.setItem('profileData', JSON.stringify(profileDataToSave));
+        setSuccess('Profile updated successfully! (Saved locally)');
+      }
+      
       setTimeout(() => {
         navigate('/app/profile');
       }, 1500);
-    } catch (err) {
-      setError('Failed to update profile. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to update profile. Please try again.');
       console.error('Error updating profile:', err);
     } finally {
       setSaving(false);
@@ -252,7 +321,7 @@ const ProfileEdit: React.FC = () => {
               >
                 {saving ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
@@ -402,6 +471,8 @@ const ProfileEdit: React.FC = () => {
                 placeholder="https://twitter.com/yourhandle"
                 error={getFieldError('social_links.twitter')}
               />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField
                 label="GitHub"
                 type="url"
@@ -421,8 +492,169 @@ const ProfileEdit: React.FC = () => {
             </div>
           </FormSection>
 
-          {/* Experience and Education sections would go here */}
-          {/* For brevity, I'm focusing on the core functionality */}
+          {/* Experience */}
+          <FormSection title="Experience" collapsible defaultOpen={false}>
+            <div className="space-y-4">
+              {formData.experience.map((exp, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <InputField
+                      label="Company"
+                      value={exp.company}
+                      onChange={(value) => {
+                        const newExperience = [...formData.experience];
+                        newExperience[index] = { ...exp, company: value };
+                        handleInputChange('experience', newExperience);
+                      }}
+                    />
+                    <InputField
+                      label="Position"
+                      value={exp.position}
+                      onChange={(value) => {
+                        const newExperience = [...formData.experience];
+                        newExperience[index] = { ...exp, position: value };
+                        handleInputChange('experience', newExperience);
+                      }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <InputField
+                      label="Start Date"
+                      type="date"
+                      value={exp.start_date}
+                      onChange={(value) => {
+                        const newExperience = [...formData.experience];
+                        newExperience[index] = { ...exp, start_date: value };
+                        handleInputChange('experience', newExperience);
+                      }}
+                    />
+                    <InputField
+                      label="End Date"
+                      type="date"
+                      value={exp.end_date}
+                      onChange={(value) => {
+                        const newExperience = [...formData.experience];
+                        newExperience[index] = { ...exp, end_date: value };
+                        handleInputChange('experience', newExperience);
+                      }}
+                    />
+                  </div>
+                  <TextAreaField
+                    label="Description"
+                    value={exp.description}
+                    onChange={(value) => {
+                      const newExperience = [...formData.experience];
+                      newExperience[index] = { ...exp, description: value };
+                      handleInputChange('experience', newExperience);
+                    }}
+                    rows={3}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newExperience = formData.experience.filter((_, i) => i !== index);
+                      handleInputChange('experience', newExperience);
+                    }}
+                    className="mt-2 text-red-600 hover:text-red-800 text-sm"
+                  >
+                    Remove Experience
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  const newExperience = [...formData.experience, {
+                    company: '',
+                    position: '',
+                    start_date: '',
+                    end_date: '',
+                    description: ''
+                  }];
+                  handleInputChange('experience', newExperience);
+                }}
+                className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-800 transition-colors"
+              >
+                + Add Experience
+              </button>
+            </div>
+          </FormSection>
+
+          {/* Education */}
+          <FormSection title="Education" collapsible defaultOpen={false}>
+            <div className="space-y-4">
+              {formData.education.map((edu, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <InputField
+                      label="Institution"
+                      value={edu.institution}
+                      onChange={(value) => {
+                        const newEducation = [...formData.education];
+                        newEducation[index] = { ...edu, institution: value };
+                        handleInputChange('education', newEducation);
+                      }}
+                    />
+                    <InputField
+                      label="Degree"
+                      value={edu.degree}
+                      onChange={(value) => {
+                        const newEducation = [...formData.education];
+                        newEducation[index] = { ...edu, degree: value };
+                        handleInputChange('education', newEducation);
+                      }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <InputField
+                      label="Field of Study"
+                      value={edu.field_of_study}
+                      onChange={(value) => {
+                        const newEducation = [...formData.education];
+                        newEducation[index] = { ...edu, field_of_study: value };
+                        handleInputChange('education', newEducation);
+                      }}
+                    />
+                    <InputField
+                      label="Graduation Year"
+                      type="number"
+                      value={edu.graduation_year}
+                      onChange={(value) => {
+                        const newEducation = [...formData.education];
+                        newEducation[index] = { ...edu, graduation_year: value };
+                        handleInputChange('education', newEducation);
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newEducation = formData.education.filter((_, i) => i !== index);
+                      handleInputChange('education', newEducation);
+                    }}
+                    className="mt-2 text-red-600 hover:text-red-800 text-sm"
+                  >
+                    Remove Education
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  const newEducation = [...formData.education, {
+                    institution: '',
+                    degree: '',
+                    field_of_study: '',
+                    graduation_year: ''
+                  }];
+                  handleInputChange('education', newEducation);
+                }}
+                className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-800 transition-colors"
+              >
+                + Add Education
+              </button>
+            </div>
+          </FormSection>
         </form>
       </div>
     </div>
