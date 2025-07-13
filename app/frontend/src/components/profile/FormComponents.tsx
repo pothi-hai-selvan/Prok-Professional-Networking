@@ -1,5 +1,4 @@
 import React from 'react';
-import type { ValidationError } from '../../types';
 
 interface InputFieldProps {
   label: string;

@@ -28,7 +28,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     if (hasMore && onLoadMore) {
       onLoadMore();
     } else {
-      setPage(prev => prev + 1);
+      setPage((prev: number) => prev + 1);
     }
   };
 
@@ -184,7 +184,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
         </div>
       ) : (
         <div className="space-y-4">
-          {visibleActivities.map((activity, index) => (
+          {visibleActivities.map((activity: Activity) => (
             <div key={activity.id} className="flex items-start space-x-3">
               {getActivityIcon(activity.type)}
               <div className="flex-1 min-w-0">

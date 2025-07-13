@@ -1,4 +1,3 @@
-import React from 'react';
 import { useProfileData } from '../../hooks/useProfileData';
 import ProfileHeader from './ProfileHeader';
 import AboutSection from './AboutSection';
@@ -31,7 +30,7 @@ export default function ProfileView() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 max-w-6xl mx-auto p-4">
+    <div className="flex flex-col md:flex-row gap-6 max-w-screen-2xl mx-auto p-4">
       {/* Main Content */}
       <div className="flex-1 min-w-0">
         <ProfileHeader profileData={profileData} />

@@ -1,20 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { 
-  InputField, 
-  TextAreaField, 
-  SkillsInput, 
-  ImageUpload, 
-  FormSection 
-} from './FormComponents';
-import { profileApi } from './api';
-import { mockProfile, mockUser, validationRules } from './mockData';
-import type { Profile, User, ProfileFormData, ValidationError } from '../../types';
+import type { ProfileFormData, ValidationError } from '../../types';
+import { InputField, TextAreaField, SkillsInput, ImageUpload, FormSection } from './FormComponents';
+
+// Mock data for development
+const mockUser = {
+  name: 'Demo User',
+  email: 'demo@example.com'
+};
+
+const mockProfile = {
+  bio: 'Experienced software engineer with a passion for building scalable web applications.',
+  title: 'Senior Software Engineer',
+  location: 'San Francisco, CA',
+  skills: ['React', 'Node.js', 'Python', 'AWS'],
+  experience: [
+    {
+      id: 1,
+      title: 'Senior Software Engineer',
+      company: 'TechCorp',
+      start_date: '2022-01-01',
+      end_date: '',
+      description: 'Leading development of scalable web applications.'
+    }
+  ],
+  education: [
+    {
+      id: 1,
+      school: 'University of Technology',
+      degree: 'Bachelor of Science',
+      field: 'Computer Science',
+      start_date: '2016-09-01',
+      end_date: '2020-05-01'
+    }
+  ],
+  social_links: {
+    linkedin: '',
+    twitter: '',
+    github: '',
+    website: ''
+  },
+  contact_info: {
+    email: 'demo@example.com',
+    phone: '',
+    location: 'San Francisco, CA'
+  },
+  avatar_url: null
+};
+
+// Mock API for development
+const profileApi = {
+  getProfile: async () => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return {
+      user: mockUser,
+      ...mockProfile
+    };
+  },
+  updateProfile: async (data: any) => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('Profile updated:', data);
+    return { success: true };
+  }
+};
 
 const ProfileEdit: React.FC = () => {
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,31 +183,42 @@ const ProfileEdit: React.FC = () => {
     fetchProfileData();
   }, []);
 
-  const validateField = (field: string, value: any): string | null => {
-    const rules = validationRules[field as keyof typeof validationRules];
-    if (!rules) return null;
-
+  const validateField = (field: string, value: any, rules: any): string | null => {
     if (rules.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
       return `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
     }
 
-    if (typeof value === 'string') {
-      if (rules.minLength && value.length < rules.minLength) {
+    if (typeof value === 'string' && value.trim() !== '') {
+      if ('minLength' in rules && rules.minLength && value.length < rules.minLength) {
         return `${field.charAt(0).toUpperCase() + field.slice(1)} must be at least ${rules.minLength} characters`;
       }
-      if (rules.maxLength && value.length > rules.maxLength) {
+      if ('maxLength' in rules && rules.maxLength && value.length > rules.maxLength) {
         return `${field.charAt(0).toUpperCase() + field.slice(1)} must be no more than ${rules.maxLength} characters`;
       }
-      if (rules.pattern && !rules.pattern.test(value)) {
-        return `Please enter a valid ${field}`;
+      if ('pattern' in rules && rules.pattern && !rules.pattern.test(value)) {
+        return `${field.charAt(0).toUpperCase() + field.slice(1)} format is invalid`;
       }
     }
 
-    if (Array.isArray(value) && rules.maxItems && value.length > rules.maxItems) {
+    if (Array.isArray(value) && 'maxItems' in rules && rules.maxItems && value.length > rules.maxItems) {
       return `You can only add up to ${rules.maxItems} ${field}`;
     }
 
     return null;
+  };
+
+  const validationRules = {
+    name: { required: true, minLength: 2, maxLength: 50 },
+    email: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
+    bio: { maxLength: 500 },
+    title: { maxLength: 100 },
+    location: { maxLength: 100 },
+    skills: { maxItems: 10 },
+    phone: { pattern: /^[\+]?[1-9][\d]{0,15}$/ },
+    linkedin: { pattern: /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9-]+\/?$/ },
+    twitter: { pattern: /^https?:\/\/(www\.)?twitter\.com\/[a-zA-Z0-9_]+\/?$/ },
+    github: { pattern: /^https?:\/\/(www\.)?github\.com\/[a-zA-Z0-9-]+\/?$/ },
+    website: { pattern: /^https?:\/\/.+/ }
   };
 
   const validateForm = (): boolean => {
@@ -163,7 +227,7 @@ const ProfileEdit: React.FC = () => {
     // Validate each field
     Object.keys(formData).forEach(field => {
       const value = formData[field as keyof ProfileFormData];
-      const error = validateField(field, value);
+      const error = validateField(field, value, validationRules[field as keyof typeof validationRules]);
       if (error) {
         errors.push({ field, message: error });
       }
@@ -202,7 +266,7 @@ const ProfileEdit: React.FC = () => {
     setFormData(prev => ({
       ...prev,
       [parent]: {
-        ...prev[parent as keyof ProfileFormData],
+        ...prev[parent as keyof ProfileFormData] as any,
         [field]: value
       }
     }));
@@ -301,7 +365,7 @@ const ProfileEdit: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 pt-8">
+    <div className="max-w-screen-xl mx-auto p-4 pt-8">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200">
@@ -363,7 +427,7 @@ const ProfileEdit: React.FC = () => {
           {/* Basic Information */}
           <FormSection title="Basic Information">
             <ImageUpload
-              currentImage={imagePreview}
+              currentImage={imagePreview || undefined}
               onImageChange={handleImageChange}
               error={getFieldError('avatar')}
             />
@@ -437,7 +501,7 @@ const ProfileEdit: React.FC = () => {
               <InputField
                 label="Phone"
                 type="tel"
-                value={formData.contact_info.phone}
+                value={formData.contact_info.phone || ''}
                 onChange={(value) => handleNestedChange('contact_info', 'phone', value)}
                 placeholder="+1 (555) 123-4567"
                 error={getFieldError('contact_info.phone')}
@@ -458,7 +522,7 @@ const ProfileEdit: React.FC = () => {
               <InputField
                 label="LinkedIn"
                 type="url"
-                value={formData.social_links.linkedin}
+                value={formData.social_links.linkedin || ''}
                 onChange={(value) => handleNestedChange('social_links', 'linkedin', value)}
                 placeholder="https://linkedin.com/in/yourprofile"
                 error={getFieldError('social_links.linkedin')}
@@ -466,7 +530,7 @@ const ProfileEdit: React.FC = () => {
               <InputField
                 label="Twitter"
                 type="url"
-                value={formData.social_links.twitter}
+                value={formData.social_links.twitter || ''}
                 onChange={(value) => handleNestedChange('social_links', 'twitter', value)}
                 placeholder="https://twitter.com/yourhandle"
                 error={getFieldError('social_links.twitter')}
@@ -476,7 +540,7 @@ const ProfileEdit: React.FC = () => {
               <InputField
                 label="GitHub"
                 type="url"
-                value={formData.social_links.github}
+                value={formData.social_links.github || ''}
                 onChange={(value) => handleNestedChange('social_links', 'github', value)}
                 placeholder="https://github.com/yourusername"
                 error={getFieldError('social_links.github')}
@@ -484,7 +548,7 @@ const ProfileEdit: React.FC = () => {
               <InputField
                 label="Website"
                 type="url"
-                value={formData.social_links.website}
+                value={formData.social_links.website || ''}
                 onChange={(value) => handleNestedChange('social_links', 'website', value)}
                 placeholder="https://yourwebsite.com"
                 error={getFieldError('social_links.website')}
@@ -496,7 +560,7 @@ const ProfileEdit: React.FC = () => {
           <FormSection title="Experience" collapsible defaultOpen={false}>
             <div className="space-y-4">
               {formData.experience.map((exp, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div key={exp.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <InputField
                       label="Company"
@@ -509,10 +573,10 @@ const ProfileEdit: React.FC = () => {
                     />
                     <InputField
                       label="Position"
-                      value={exp.position}
+                      value={exp.title || ''}
                       onChange={(value) => {
                         const newExperience = [...formData.experience];
-                        newExperience[index] = { ...exp, position: value };
+                        newExperience[index] = { ...exp, title: value } as any;
                         handleInputChange('experience', newExperience);
                       }}
                     />
@@ -531,10 +595,10 @@ const ProfileEdit: React.FC = () => {
                     <InputField
                       label="End Date"
                       type="date"
-                      value={exp.end_date}
+                      value={exp.end_date || ''}
                       onChange={(value) => {
                         const newExperience = [...formData.experience];
-                        newExperience[index] = { ...exp, end_date: value };
+                        newExperience[index] = { ...exp, end_date: value } as any;
                         handleInputChange('experience', newExperience);
                       }}
                     />
@@ -565,8 +629,9 @@ const ProfileEdit: React.FC = () => {
                 type="button"
                 onClick={() => {
                   const newExperience = [...formData.experience, {
+                    id: Date.now(), // Assign a unique ID
                     company: '',
-                    position: '',
+                    title: '',
                     start_date: '',
                     end_date: '',
                     description: ''
@@ -584,14 +649,14 @@ const ProfileEdit: React.FC = () => {
           <FormSection title="Education" collapsible defaultOpen={false}>
             <div className="space-y-4">
               {formData.education.map((edu, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div key={edu.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <InputField
                       label="Institution"
-                      value={edu.institution}
+                      value={edu.school || ''}
                       onChange={(value) => {
                         const newEducation = [...formData.education];
-                        newEducation[index] = { ...edu, institution: value };
+                        newEducation[index] = { ...edu, school: value } as any;
                         handleInputChange('education', newEducation);
                       }}
                     />
@@ -608,20 +673,20 @@ const ProfileEdit: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <InputField
                       label="Field of Study"
-                      value={edu.field_of_study}
+                      value={edu.field || ''}
                       onChange={(value) => {
                         const newEducation = [...formData.education];
-                        newEducation[index] = { ...edu, field_of_study: value };
+                        newEducation[index] = { ...edu, field: value } as any;
                         handleInputChange('education', newEducation);
                       }}
                     />
                     <InputField
                       label="Graduation Year"
                       type="number"
-                      value={edu.graduation_year}
+                      value={edu.end_date || ''}
                       onChange={(value) => {
                         const newEducation = [...formData.education];
-                        newEducation[index] = { ...edu, graduation_year: value };
+                        newEducation[index] = { ...edu, end_date: value } as any;
                         handleInputChange('education', newEducation);
                       }}
                     />
@@ -642,10 +707,12 @@ const ProfileEdit: React.FC = () => {
                 type="button"
                 onClick={() => {
                   const newEducation = [...formData.education, {
-                    institution: '',
+                    id: Date.now(), // Assign a unique ID
+                    school: '',
                     degree: '',
-                    field_of_study: '',
-                    graduation_year: ''
+                    field: '',
+                    start_date: '',
+                    end_date: ''
                   }];
                   handleInputChange('education', newEducation);
                 }}

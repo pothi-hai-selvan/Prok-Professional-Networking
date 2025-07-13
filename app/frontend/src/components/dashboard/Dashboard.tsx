@@ -1,10 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { useProfileData } from '../../hooks/useProfileData';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
   const { profileData } = useProfileData();
 
   const quickActions = [
@@ -49,13 +47,13 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <h1 className="text-3xl font-bold text-black dark:text-white">Welcome back, {profileData.name}!</h1>
           <p className="mt-2 text-black dark:text-white">Here's what's happening in your professional network today.</p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => (

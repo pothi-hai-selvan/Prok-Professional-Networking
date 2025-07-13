@@ -1,5 +1,3 @@
-import React from 'react';
-
 const mockFeatured = [
   {
     type: 'post',
@@ -23,14 +21,14 @@ const mockFeatured = [
 
 export default function FeaturedSection() {
   return (
-    <section className="bg-white rounded-lg shadow p-6 mb-6">
-      <h2 className="text-xl font-bold mb-4">Featured</h2>
+    <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6 border border-gray-200 dark:border-gray-700">
+      <h2 className="text-xl font-bold mb-4 text-black dark:text-white">Featured</h2>
       <ul className="flex flex-wrap gap-4">
         {mockFeatured.map((item, idx) => (
-          <li key={idx} className="w-64 bg-gray-50 rounded-lg p-4 shadow">
-            <h3 className="font-semibold mb-1">{item.title}</h3>
-            <p className="text-gray-600 text-sm mb-2">{item.description}</p>
-            <a href={item.url} className="text-blue-600 text-sm underline" target="_blank" rel="noopener noreferrer">
+          <li key={idx} className="w-64 bg-gray-50 dark:bg-gray-700 rounded-lg p-4 shadow">
+            <h3 className="font-semibold mb-1 text-black dark:text-white">{item.title}</h3>
+            <p className="text-black dark:text-white text-sm mb-2">{item.description}</p>
+            <a href={item.url} className="text-blue-600 dark:text-blue-400 text-sm underline" target="_blank" rel="noopener noreferrer">
               View {item.type}
             </a>
           </li>

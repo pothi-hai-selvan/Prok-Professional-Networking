@@ -23,6 +23,8 @@ const PostCreate: React.FC = () => {
 
   const MAX_CHARS = 5000;
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const MAX_IMAGE_WIDTH = 1200; // Maximum width for images
+  const MAX_IMAGE_HEIGHT = 800; // Maximum height for images
 
   useEffect(() => {
     setCharCount(content.length);
@@ -36,7 +38,56 @@ const PostCreate: React.FC = () => {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Function to resize image
+  const resizeImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) {
+        resolve(file); // Return original file for non-images
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        let { width, height } = img;
+
+        // Calculate new dimensions while maintaining aspect ratio
+        if (width > MAX_IMAGE_WIDTH) {
+          height = (height * MAX_IMAGE_WIDTH) / width;
+          width = MAX_IMAGE_WIDTH;
+        }
+        if (height > MAX_IMAGE_HEIGHT) {
+          width = (width * MAX_IMAGE_HEIGHT) / height;
+          height = MAX_IMAGE_HEIGHT;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+        }
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const resizedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: Date.now(),
+            });
+            resolve(resizedFile);
+          } else {
+            resolve(file);
+          }
+        }, file.type, 0.8); // 80% quality
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -53,15 +104,22 @@ const PostCreate: React.FC = () => {
       return;
     }
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const preview = e.target?.result as string;
-      const type = file.type.startsWith('image/') ? 'image' : 'video';
-      setMedia({ file, preview, type });
-      setError(null);
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Resize image if it's an image file
+      const processedFile = await resizeImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const preview = e.target?.result as string;
+        const type = processedFile.type.startsWith('image/') ? 'image' : 'video';
+        setMedia({ file: processedFile, preview, type });
+        setError(null);
+      };
+      reader.readAsDataURL(processedFile);
+    } catch (err) {
+      setError('Failed to process image. Please try again.');
+    }
   };
 
   const removeMedia = () => {
@@ -114,7 +172,7 @@ const PostCreate: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <div className="max-w-screen-xl mx-auto p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -190,7 +248,7 @@ const PostCreate: React.FC = () => {
                 Add Media
               </button>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                Upload an image or video (max 10MB)
+                Upload an image or video (max 10MB, images will be automatically resized)
               </p>
             </div>
           </div>
@@ -203,19 +261,19 @@ const PostCreate: React.FC = () => {
                   <img
                     src={media.preview}
                     alt="Preview"
-                    className="w-full h-auto rounded-lg max-h-96 object-cover"
+                    className="w-full h-auto rounded-lg max-h-[600px] object-contain bg-gray-50 dark:bg-gray-700"
                   />
                 ) : (
                   <video
                     src={media.preview}
                     controls
-                    className="w-full h-auto rounded-lg max-h-96"
+                    className="w-full h-auto rounded-lg max-h-[600px]"
                   />
                 )}
                 <button
                   type="button"
                   onClick={removeMedia}
-                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-colors"
+                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-colors shadow-lg"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -292,13 +350,13 @@ const PostCreate: React.FC = () => {
                     <img
                       src={media.preview}
                       alt="Preview"
-                      className="w-full h-auto rounded-lg max-h-64 object-cover"
+                      className="w-full h-auto rounded-lg max-h-[600px] object-contain bg-gray-50 dark:bg-gray-700"
                     />
                   ) : (
                     <video
                       src={media.preview}
                       controls
-                      className="w-full h-auto rounded-lg max-h-64"
+                      className="w-full h-auto rounded-lg max-h-[600px]"
                     />
                   )}
                 </div>

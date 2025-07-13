@@ -11,24 +11,16 @@ export interface ValidationRules {
   [key: string]: ValidationRule;
 }
 
-export interface ValidationError {
-  field: string;
-  message: string;
-}
-
-export const validateField = (field: string, value: any, rules: ValidationRule): string | null => {
-  // Required validation
+export const validateField = (
+  field: string,
+  value: any,
+  rules: ValidationRule
+): string | null => {
   if (rules.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
     return `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
   }
 
-  // Skip other validations if value is empty and not required
-  if (!value || (typeof value === 'string' && value.trim() === '')) {
-    return null;
-  }
-
-  // String validations
-  if (typeof value === 'string') {
+  if (typeof value === 'string' && value.trim() !== '') {
     if (rules.minLength && value.length < rules.minLength) {
       return `${field.charAt(0).toUpperCase() + field.slice(1)} must be at least ${rules.minLength} characters`;
     }
@@ -36,18 +28,14 @@ export const validateField = (field: string, value: any, rules: ValidationRule):
       return `${field.charAt(0).toUpperCase() + field.slice(1)} must be no more than ${rules.maxLength} characters`;
     }
     if (rules.pattern && !rules.pattern.test(value)) {
-      return `Please enter a valid ${field}`;
+      return `${field.charAt(0).toUpperCase() + field.slice(1)} format is invalid`;
     }
   }
 
-  // Array validations
-  if (Array.isArray(value)) {
-    if (rules.maxItems && value.length > rules.maxItems) {
-      return `You can only add up to ${rules.maxItems} ${field}`;
-    }
+  if (Array.isArray(value) && rules.maxItems && value.length > rules.maxItems) {
+    return `You can only add up to ${rules.maxItems} ${field}`;
   }
 
-  // Custom validation
   if (rules.custom) {
     return rules.custom(value);
   }
@@ -55,15 +43,18 @@ export const validateField = (field: string, value: any, rules: ValidationRule):
   return null;
 };
 
-export const validateForm = (data: any, rules: ValidationRules): ValidationError[] => {
-  const errors: ValidationError[] = [];
+export const validateForm = (
+  data: Record<string, any>,
+  rules: ValidationRules
+): Record<string, string> => {
+  const errors: Record<string, string> = {};
 
   Object.keys(rules).forEach(field => {
     const value = data[field];
     const fieldRules = rules[field];
     const error = validateField(field, value, fieldRules);
     if (error) {
-      errors.push({ field, message: error });
+      errors[field] = error;
     }
   });
 
@@ -71,13 +62,12 @@ export const validateForm = (data: any, rules: ValidationRules): ValidationError
 };
 
 export const validateNestedField = (
-  parent: string, 
-  field: string, 
-  value: any, 
+  field: string,
+  value: any,
   rules: ValidationRule
 ): string | null => {
   const error = validateField(field, value, rules);
-  return error ? error : null;
+  return error;
 };
 
 // Common validation patterns

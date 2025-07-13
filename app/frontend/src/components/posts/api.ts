@@ -1,4 +1,13 @@
-const API_URL = 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+interface FilterOptions {
+  search?: string;
+  category?: string;
+  visibility?: string;
+  tags?: string[];
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
 
 export const postApi = {
   // Create a new post
@@ -16,11 +25,25 @@ export const postApi = {
     return response.json();
   },
 
-  // Get all posts with pagination
-  getPosts: async (page = 1, perPage = 10) => {
-    const response = await fetch(
-      `${API_URL}/api/posts?page=${page}&per_page=${perPage}`
-    );
+  // Get all posts with advanced filtering and pagination
+  getPosts: async (page = 1, perPage = 10, filters?: FilterOptions) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString(),
+    });
+
+    if (filters) {
+      if (filters.search) params.append('search', filters.search);
+      if (filters.category) params.append('category', filters.category);
+      if (filters.visibility) params.append('visibility', filters.visibility);
+      if (filters.tags && filters.tags.length > 0) {
+        filters.tags.forEach(tag => params.append('tags', tag));
+      }
+      if (filters.sortBy) params.append('sort_by', filters.sortBy);
+      if (filters.sortOrder) params.append('sort_order', filters.sortOrder);
+    }
+
+    const response = await fetch(`${API_URL}/api/posts?${params.toString()}`);
 
     if (!response.ok) {
       const error = await response.json();
@@ -51,6 +74,30 @@ export const postApi = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to delete post');
+    }
+
+    return response.json();
+  },
+
+  // Get post categories
+  getCategories: async () => {
+    const response = await fetch(`${API_URL}/api/posts/categories`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch categories');
+    }
+
+    return response.json();
+  },
+
+  // Get popular tags
+  getPopularTags: async () => {
+    const response = await fetch(`${API_URL}/api/posts/popular-tags`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch popular tags');
     }
 
     return response.json();

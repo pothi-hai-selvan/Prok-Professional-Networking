@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ProfileData } from '../../hooks/useProfileData';
 
 interface AboutSectionProps {
